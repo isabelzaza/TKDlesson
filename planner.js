@@ -149,38 +149,15 @@ function shuffleArray(array) {
     }
 }
 
-function assignTimes(activities, totalTime, timeAlloc) {
+function assignTimes(activities, totalTime) {
     const n = activities.length;
+    const baseTime = Math.floor(totalTime / n);
+    const remainder = totalTime % n;
 
-    // Calculate fair share per activity
-    const baseTimePerActivity = totalTime / n;
-
-    // First pass: assign times proportionally, respecting activity constraints loosely
-    let assigned = activities.map(activity => {
-        // For single activities, they should fill the whole time
-        // For multiple, distribute more evenly
-        return baseTimePerActivity;
-    });
-
-    // Adjust to ensure total matches exactly
-    let currentTotal = assigned.reduce((a, b) => a + b, 0);
-
-    // Distribute any rounding differences
-    if (currentTotal !== totalTime) {
-        const diff = totalTime - currentTotal;
-        assigned[0] += diff;
-    }
-
-    // Round to whole minutes and assign
     activities.forEach((activity, index) => {
-        activity.assignedTime = Math.round(assigned[index]);
+        // Give base time to each, distribute remainder to first few
+        activity.assignedTime = baseTime + (index < remainder ? 1 : 0);
     });
-
-    // Final adjustment to hit exact target
-    let finalTotal = activities.reduce((sum, a) => sum + a.assignedTime, 0);
-    if (finalTotal !== totalTime) {
-        activities[activities.length - 1].assignedTime += (totalTime - finalTotal);
-    }
 }
 
 function displayPlan(activities) {
