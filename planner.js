@@ -151,28 +151,36 @@ function shuffleArray(array) {
 
 function assignTimes(activities, totalTime, timeAlloc) {
     const n = activities.length;
-    let remaining = totalTime;
 
-    activities.forEach((activity, index) => {
-        const isLast = index === n - 1;
+    // Calculate fair share per activity
+    const baseTimePerActivity = totalTime / n;
 
-        if (isLast) {
-            // Last activity gets remaining time
-            activity.assignedTime = Math.max(activity.minTime, Math.min(activity.maxTime, remaining));
-        } else {
-            // Pick a time within the activity's range and overall allocation
-            const minT = Math.max(activity.minTime, timeAlloc.min);
-            const maxT = Math.min(activity.maxTime, timeAlloc.max);
-            const avgRemaining = remaining / (n - index);
-
-            // Aim for a time that leaves fair share for remaining
-            let time = Math.round(minT + Math.random() * (maxT - minT));
-            time = Math.max(minT, Math.min(maxT, time));
-
-            activity.assignedTime = time;
-            remaining -= time;
-        }
+    // First pass: assign times proportionally, respecting activity constraints loosely
+    let assigned = activities.map(activity => {
+        // For single activities, they should fill the whole time
+        // For multiple, distribute more evenly
+        return baseTimePerActivity;
     });
+
+    // Adjust to ensure total matches exactly
+    let currentTotal = assigned.reduce((a, b) => a + b, 0);
+
+    // Distribute any rounding differences
+    if (currentTotal !== totalTime) {
+        const diff = totalTime - currentTotal;
+        assigned[0] += diff;
+    }
+
+    // Round to whole minutes and assign
+    activities.forEach((activity, index) => {
+        activity.assignedTime = Math.round(assigned[index]);
+    });
+
+    // Final adjustment to hit exact target
+    let finalTotal = activities.reduce((sum, a) => sum + a.assignedTime, 0);
+    if (finalTotal !== totalTime) {
+        activities[activities.length - 1].assignedTime += (totalTime - finalTotal);
+    }
 }
 
 function displayPlan(activities) {
